@@ -16,25 +16,17 @@ module ROTP
     # :nocov:
 
     def errors
-      if %i[time hmac].include?(options.mode)
-        if options.secret.to_s == ''
-          red 'You must also specify a --secret. Try --help for help.'
-        elsif options.secret.to_s.chars.any? { |c| ROTP::Base32::CHARS.index(c.upcase).nil? }
-          red 'Secret must be in RFC4648 Base32 format - http://en.wikipedia.org/wiki/Base32#RFC_4648_Base32_alphabet'
-        end
+      return unless needs_secret?
+
+      if blank_secret?
+        red 'You must also specify a --secret. Try --help for help.'
+      elsif invalid_secret?
+        red 'Secret must be in RFC4648 Base32 format - http://en.wikipedia.org/wiki/Base32#RFC_4648_Base32_alphabet'
       end
     end
 
     def output
-      return options.warnings if options.warnings
-      return errors if errors
-      return arguments.to_s if options.mode == :help
-
-      if options.mode == :time
-        ROTP::TOTP.new(options.secret, options.to_h).now
-      elsif options.mode == :hmac
-        ROTP::HOTP.new(options.secret, options.to_h).at options.counter
-      end
+      options.warnings || errors || help_message || otp_value
     end
 
     def arguments
@@ -47,6 +39,33 @@ module ROTP
 
     def red(string)
       "\033[31m#{string}\033[0m"
+    end
+
+    private
+
+    def help_message
+      arguments.to_s if options.mode == :help
+    end
+
+    def otp_value
+      case options.mode
+      when :time
+        ROTP::TOTP.new(options.secret, options.to_h).now
+      when :hmac
+        ROTP::HOTP.new(options.secret, options.to_h).at(options.counter)
+      end
+    end
+
+    def needs_secret?
+      %i[time hmac].include?(options.mode)
+    end
+
+    def blank_secret?
+      options.secret.to_s.empty?
+    end
+
+    def invalid_secret?
+      options.secret.to_s.chars.any? { |c| ROTP::Base32::CHARS.index(c.upcase).nil? }
     end
   end
 end
