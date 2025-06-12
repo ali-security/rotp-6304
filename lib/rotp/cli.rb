@@ -25,7 +25,7 @@ module ROTP
         if invalid_secret?
           return red 'Secret must be in RFC4648 Base32 format - http://en.wikipedia.org/wiki/Base32#RFC_4648_Base32_alphabet'
         end
-        if decoded_secret.length < 20
+        if options.secret.tr('=', '').length < 32
           return red 'Secret must be at least 160 bits (32 characters in Base32)'
         end
       end
