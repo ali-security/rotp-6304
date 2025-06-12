@@ -21,8 +21,13 @@ module ROTP
         return red 'You must also specify a --secret. Try --help for help.'
       end
 
-      if secret_provided? && invalid_secret?
-        return red 'Secret must be in RFC4648 Base32 format - http://en.wikipedia.org/wiki/Base32#RFC_4648_Base32_alphabet'
+      if secret_provided?
+        if invalid_secret?
+          return red 'Secret must be in RFC4648 Base32 format - http://en.wikipedia.org/wiki/Base32#RFC_4648_Base32_alphabet'
+        end
+        if decoded_secret.length < 20
+          return red 'Secret must be at least 160 bits (32 characters in Base32)'
+        end
       end
     end
 
@@ -70,10 +75,14 @@ module ROTP
     end
 
     def invalid_secret?
-      ROTP::Base32.decode(options.secret)
+      decoded_secret
       false
     rescue ROTP::Base32::Base32Error
       true
+    end
+
+    def decoded_secret
+      @decoded_secret ||= ROTP::Base32.decode(options.secret)
     end
   end
 end
