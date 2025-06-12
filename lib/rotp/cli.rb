@@ -1,4 +1,5 @@
 require 'rotp/arguments'
+require 'rotp/base32'
 
 module ROTP
   class CLI
@@ -69,7 +70,10 @@ module ROTP
     end
 
     def invalid_secret?
-      options.secret.to_s.chars.any? { |c| ROTP::Base32::CHARS.index(c.upcase).nil? }
+      ROTP::Base32.decode(options.secret)
+      false
+    rescue ROTP::Base32::Base32Error
+      true
     end
   end
 end
